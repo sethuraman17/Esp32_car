@@ -1,0 +1,106 @@
+<mujoco model="esp32_car">
+  <!-- Planar skid-steer: slides on track (no flip). Wheels spin for visuals only. -->
+  <compiler angle="degree" inertiafromgeom="false"/>
+
+  <default>
+    <joint limited="false" damping="0.8" armature="0.05"/>
+    <geom contype="0" conaffinity="0"/>
+  </default>
+
+  <asset>
+    <material name="chassis" rgba="0.2 0.2 0.24 1" specular="0.3" shininess="0.2"/>
+    <material name="battery" rgba="0.1 0.62 0.2 1"/>
+    <material name="battery_label" rgba="0.95 0.92 0.15 1"/>
+    <material name="l298n" rgba="0.08 0.18 0.55 1"/>
+    <material name="l298n_pins" rgba="0.9 0.82 0.25 1"/>
+    <material name="esp32" rgba="0.1 0.42 0.18 1"/>
+    <material name="esp32_chip" rgba="0.15 0.15 0.18 1"/>
+    <material name="motor_body" rgba="0.35 0.35 0.38 1"/>
+    <material name="wheel_rubber" rgba="0.06 0.06 0.06 1" specular="0.1"/>
+    <material name="wire_red" rgba="0.9 0.15 0.12 1"/>
+    <material name="wire_black" rgba="0.05 0.05 0.05 1"/>
+  </asset>
+
+  <worldbody>
+    <body name="car" pos="0 0 0.032">
+      <inertial pos="0 0 0.02" mass="0.55" diaginertia="0.002 0.0025 0.003"/>
+
+      <!-- Drive on the track plane: X, Y, yaw (cannot tip over) -->
+      <joint name="drive_x" type="slide" axis="1 0 0" damping="0.4"/>
+      <joint name="drive_y" type="slide" axis="0 1 0" damping="0.4"/>
+      <joint name="drive_z" type="slide" axis="0 0 1" damping="2" stiffness="0"/>
+      <joint name="drive_yaw" type="hinge" axis="0 0 1" damping="0.02"/>
+
+      <!-- Bumper hits walls. Sits above the ground so only the tires drive. -->
+      <geom name="body_hit" type="box" size="0.07 0.05 0.018" pos="0 0 0.045"
+            rgba="0 0 0 0" contype="1" conaffinity="1" friction="0.4 0.01 0.001"/>
+      <!-- Red nose marks the front (+X) -->
+      <geom type="box" size="0.012 0.02 0.008" pos="0.09 0 0.02" rgba="0.9 0.15 0.12 1"/>
+      <geom type="box" size="0.078 0.068 0.005" pos="0 0 0.008" material="chassis"/>
+      <geom type="capsule" fromto="-0.032 0.024 0.016 0.032 0.024 0.016" size="0.012" material="battery"/>
+      <geom type="capsule" fromto="-0.032 -0.024 0.016 0.032 -0.024 0.016" size="0.012" material="battery"/>
+      <geom type="box" size="0.014 0.009 0.003" pos="0.034 0 0.02" material="battery_label"/>
+      <geom type="box" size="0.046 0.04 0.009" pos="0 0 0.032" material="l298n"/>
+      <geom type="box" size="0.036 0.014 0.005" pos="0 0.026 0.038" material="l298n_pins"/>
+      <geom type="box" size="0.03 0.015 0.004" pos="0 0 0.048" material="esp32"/>
+      <geom type="box" size="0.013 0.013 0.003" pos="0.006 0 0.053" material="esp32_chip"/>
+      <geom type="box" size="0.005 0.02 0.001" pos="-0.024 0 0.051" material="esp32_chip"/>
+      <geom type="capsule" fromto="0.04 0.035 0.028 0.055 0.05 0.012" size="0.002" material="wire_red"/>
+      <geom type="capsule" fromto="0.04 -0.035 0.028 0.055 -0.05 0.012" size="0.002" material="wire_black"/>
+
+      <body name="wheel_fl" pos="0.062 0.058 0">
+        <inertial pos="0 0 0" mass="0.04" diaginertia="2e-5 3e-5 3e-5"/>
+        <joint name="wheel_fl_joint" type="hinge" axis="0 1 0" damping="0.001" armature="0.001"/>
+        <geom type="cylinder" size="0.012 0.014" quat="0.707107 0.707107 0 0" material="motor_body"/>
+        <geom type="cylinder" size="0.032 0.014" quat="0.707107 0.707107 0 0" material="wheel_rubber"/>
+        <geom type="sphere" size="0.007" pos="0.026 0 0" rgba="0.92 0.92 0.92 1" contype="0" conaffinity="0"/>
+        <geom name="tire_fl" type="sphere" size="0.032" friction="1.4 0.02 0.001" condim="3"
+              contype="1" conaffinity="1" rgba="0 0 0 0"
+              solimp="0.95 0.99 0.001" solref="0.02 1"/>
+      </body>
+
+      <body name="wheel_fr" pos="0.062 -0.058 0">
+        <inertial pos="0 0 0" mass="0.04" diaginertia="2e-5 3e-5 3e-5"/>
+        <joint name="wheel_fr_joint" type="hinge" axis="0 1 0" damping="0.001" armature="0.001"/>
+        <geom type="cylinder" size="0.012 0.014" quat="0.707107 0.707107 0 0" material="motor_body"/>
+        <geom type="cylinder" size="0.032 0.014" quat="0.707107 0.707107 0 0" material="wheel_rubber"/>
+        <geom type="sphere" size="0.007" pos="0.026 0 0" rgba="0.92 0.92 0.92 1" contype="0" conaffinity="0"/>
+        <geom name="tire_fr" type="sphere" size="0.032" friction="1.4 0.02 0.001" condim="3"
+              contype="1" conaffinity="1" rgba="0 0 0 0"
+              solimp="0.95 0.99 0.001" solref="0.02 1"/>
+      </body>
+
+      <body name="wheel_rl" pos="-0.062 0.058 0">
+        <inertial pos="0 0 0" mass="0.04" diaginertia="2e-5 3e-5 3e-5"/>
+        <joint name="wheel_rl_joint" type="hinge" axis="0 1 0" damping="0.001" armature="0.001"/>
+        <geom type="cylinder" size="0.012 0.014" quat="0.707107 0.707107 0 0" material="motor_body"/>
+        <geom type="cylinder" size="0.032 0.014" quat="0.707107 0.707107 0 0" material="wheel_rubber"/>
+        <geom type="sphere" size="0.007" pos="0.026 0 0" rgba="0.92 0.92 0.92 1" contype="0" conaffinity="0"/>
+        <geom name="tire_rl" type="sphere" size="0.032" friction="1.4 0.02 0.001" condim="3"
+              contype="1" conaffinity="1" rgba="0 0 0 0"
+              solimp="0.95 0.99 0.001" solref="0.02 1"/>
+      </body>
+
+      <body name="wheel_rr" pos="-0.062 -0.058 0">
+        <inertial pos="0 0 0" mass="0.04" diaginertia="2e-5 3e-5 3e-5"/>
+        <joint name="wheel_rr_joint" type="hinge" axis="0 1 0" damping="0.001" armature="0.001"/>
+        <geom type="cylinder" size="0.012 0.014" quat="0.707107 0.707107 0 0" material="motor_body"/>
+        <geom type="cylinder" size="0.032 0.014" quat="0.707107 0.707107 0 0" material="wheel_rubber"/>
+        <geom type="sphere" size="0.007" pos="0.026 0 0" rgba="0.92 0.92 0.92 1" contype="0" conaffinity="0"/>
+        <geom name="tire_rr" type="sphere" size="0.032" friction="1.4 0.02 0.001" condim="3"
+              contype="1" conaffinity="1" rgba="0 0 0 0"
+              solimp="0.95 0.99 0.001" solref="0.02 1"/>
+      </body>
+
+      <camera name="chase" pos="-0.22 0 0.14" xyaxes="1 0 0 0 0.3 0.95" mode="trackcom"/>
+    </body>
+  </worldbody>
+
+  <actuator>
+    <!-- DC motors on the four wheels only. Tire friction moves the chassis. -->
+    <velocity name="act_fl" joint="wheel_fl_joint" kv="0.15" ctrlrange="-30 30" forcelimited="true" forcerange="-0.25 0.25"/>
+    <velocity name="act_fr" joint="wheel_fr_joint" kv="0.15" ctrlrange="-30 30" forcelimited="true" forcerange="-0.25 0.25"/>
+    <velocity name="act_rl" joint="wheel_rl_joint" kv="0.15" ctrlrange="-30 30" forcelimited="true" forcerange="-0.25 0.25"/>
+    <velocity name="act_rr" joint="wheel_rr_joint" kv="0.15" ctrlrange="-30 30" forcelimited="true" forcerange="-0.25 0.25"/>
+  </actuator>
+</mujoco>
